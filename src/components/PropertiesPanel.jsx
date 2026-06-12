@@ -55,6 +55,51 @@ function ToggleField({ label, checked, onChange }) {
   );
 }
 
+const fieldWidthOptions = [
+  {
+    id: "full",
+    label: "Full",
+    description: "Use the whole row"
+  },
+  {
+    id: "half",
+    label: "Half",
+    description: "Use half of the row"
+  },
+  {
+    id: "quarter",
+    label: "Quarter",
+    description: "Use one quarter of the row"
+  }
+];
+
+function FieldWidthControl({ value = "full", onChange }) {
+  return (
+    <div>
+      <span className="mb-2 block text-sm font-medium text-slate-700">
+        Field length
+      </span>
+      <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
+        {fieldWidthOptions.map(option => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onChange(option.id)}
+            className={`min-h-12 rounded-xl px-2 text-center text-xs font-bold transition ${
+              value === option.id
+                ? "bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-200"
+                : "text-slate-500 hover:bg-white/70 hover:text-slate-800"
+            }`}
+            title={option.description}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function OptionsEditor({ options = [], onChange }) {
   function updateOption(index, value) {
     onChange(options.map((option, optionIndex) =>
@@ -179,6 +224,13 @@ export default function PropertiesPanel({
           {selectedElement.type !== "section" && (
             <section className="space-y-4 rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm">
               <SectionLabel>Behavior</SectionLabel>
+
+              <FieldWidthControl
+                value={selectedElement.fieldWidth || "full"}
+                onChange={fieldWidth =>
+                  updateElement(selectedElement.id, { fieldWidth })
+                }
+              />
 
               <ToggleField
                 label="Required field"

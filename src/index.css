@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+.form-field-card {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+.form-field-card--full {
+  flex-basis: 100%;
+  max-width: 100%;
+}
+
+.form-field-card--half {
+  flex-basis: calc(50% - 0.5rem);
+  max-width: calc(50% - 0.5rem);
+}
+
+.form-field-card--quarter {
+  flex-basis: calc(25% - 0.75rem);
+  max-width: calc(25% - 0.75rem);
+}
+
+@media (max-width: 760px) {
+  .form-field-card--half,
+  .form-field-card--quarter {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+}

@@ -6,10 +6,32 @@ import {
   FaPhoneAlt
 } from "react-icons/fa";
 
-const deviceWidths = {
-  desktop: "max-w-6xl",
-  tablet: "max-w-3xl",
-  mobile: "max-w-sm"
+const deviceFrames = {
+  desktop: {
+    width: "max-w-6xl",
+    frame: "",
+    screen: ""
+  },
+  tablet: {
+    width: "max-w-[820px]",
+    frame:
+      "rounded-[2.4rem] border-[12px] border-slate-900 bg-slate-900 p-2 shadow-[0_26px_70px_rgba(15,23,42,0.28)]",
+    screen:
+      "h-[820px] max-h-[78vh] overflow-y-auto rounded-[1.55rem] bg-white px-6 py-6 [scrollbar-width:thin] [scrollbar-color:rgba(75,130,108,0.35)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-900/20"
+  },
+  mobile: {
+    width: "max-w-[410px]",
+    frame:
+      "rounded-[2.8rem] border-[10px] border-slate-950 bg-slate-950 p-2 shadow-[0_26px_70px_rgba(15,23,42,0.32)]",
+    screen:
+      "h-[700px] max-h-[76vh] overflow-y-auto rounded-[2rem] bg-white px-4 py-5 [scrollbar-width:thin] [scrollbar-color:rgba(75,130,108,0.35)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-900/20"
+  }
+};
+
+const fieldWidthClasses = {
+  full: "col-span-12",
+  half: "col-span-6",
+  quarter: "col-span-3"
 };
 
 function getPreviewFields(elements) {
@@ -44,6 +66,14 @@ function getFieldTypeLabel(type) {
   }
 
   return "Text field";
+}
+
+function getPreviewFieldClassName(field, previewDevice) {
+  if (previewDevice === "mobile") {
+    return "col-span-12";
+  }
+
+  return fieldWidthClasses[field.fieldWidth] || fieldWidthClasses.full;
 }
 
 function renderField(field, value, handleAnswer) {
@@ -210,7 +240,8 @@ export default function PreviewFlow({
   const fieldNumberMap = new Map(
     fields.map((field, index) => [field.id, `${activePageIndex + 1}.${index + 1}`])
   );
-  const deviceClassName = deviceWidths[previewDevice] || deviceWidths.desktop;
+  const deviceFrame = deviceFrames[previewDevice] || deviceFrames.desktop;
+  const isFramedDevice = previewDevice !== "desktop";
 
   return (
     <div className="h-full overflow-y-auto bg-white [scrollbar-width:thin] [scrollbar-color:rgba(75,130,108,0.35)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-900/20">
@@ -259,81 +290,89 @@ export default function PreviewFlow({
           Page {activePageIndex + 1} of {pages.length}
         </div>
 
-        <div className={`mx-auto mt-4 w-full ${deviceClassName} transition-all duration-300`}>
-          <div className="px-5 py-0 max-[760px]:px-0">
-            <h2 className="text-2xl font-bold text-slate-950">{pageName}</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              {formTitle}
-            </p>
-          </div>
+        <div className={`mx-auto mt-4 w-full ${deviceFrame.width} transition-all duration-300`}>
+          <div className={deviceFrame.frame}>
+            {isFramedDevice && (
+              <div className="mx-auto mb-2 h-1.5 w-20 rounded-full bg-slate-700" />
+            )}
 
-          {fields.length === 0 ? (
-            <div className="mt-6 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/60 px-6 py-16 text-center">
-              <h3 className="text-lg font-semibold text-slate-900">No preview fields yet</h3>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
-                Add fields in Design mode, then return to Preview to test how this
-                step will look for field users.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {Object.entries(groupedFields).map(([sectionId, sectionFields]) => {
-                const section = sections.find(item => item.id === sectionId);
+            <div className={deviceFrame.screen}>
+              <div className="px-5 py-0 max-[760px]:px-0">
+                <h2 className="text-2xl font-bold text-slate-950">{pageName}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  {formTitle}
+                </p>
+              </div>
 
-                return (
-                  <section key={sectionId} className="px-5 py-3 max-[760px]:px-0">
-                    <div className="mb-7">
-                      <h3 className="text-xl font-bold text-slate-950">
-                        {section?.label || "General information"}
-                      </h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        {section?.description || "Review and complete the fields in this step."}
-                      </p>
-                    </div>
+              {fields.length === 0 ? (
+                <div className="mt-6 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/60 px-6 py-16 text-center">
+                  <h3 className="text-lg font-semibold text-slate-900">No preview fields yet</h3>
+                  <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
+                    Add fields in Design mode, then return to Preview to test how this
+                    step will look for field users.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {Object.entries(groupedFields).map(([sectionId, sectionFields]) => {
+                    const section = sections.find(item => item.id === sectionId);
 
-                    <div className="grid grid-cols-2 gap-x-10 gap-y-8 max-[900px]:grid-cols-1">
-                      {sectionFields.map(field => (
-                        <div
-                          key={field.id}
-                          className={field.type === "textarea" ? "col-span-2 max-[900px]:col-span-1" : ""}
-                        >
-                          <label className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900">
-                            {showFieldNumbers && (
-                              <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
-                                {fieldNumberMap.get(field.id)}
-                              </span>
-                            )}
-                            <span>{field.label}</span>
-                            {field.required && <span className="text-rose-500">*</span>}
-                          </label>
-
-                          {renderField(field, formData[field.id], handleAnswer)}
-
-                          {field.description && (
-                            <p className="mt-2 text-xs leading-5 text-slate-500">
-                              {field.description}
-                            </p>
-                          )}
-
-                          {showLogicConditions && (
-                            <LogicPreview
-                              field={field}
-                              fields={fields}
-                              edges={edges}
-                            />
-                          )}
-
-                          <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                            {getFieldTypeLabel(field.type)}
+                    return (
+                      <section key={sectionId} className="px-5 py-3 max-[760px]:px-0">
+                        <div className="mb-7">
+                          <h3 className="text-xl font-bold text-slate-950">
+                            {section?.label || "General information"}
+                          </h3>
+                          <p className="mt-2 text-sm leading-6 text-slate-500">
+                            {section?.description || "Review and complete the fields in this step."}
                           </p>
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
+
+                        <div className="grid grid-cols-12 gap-x-6 gap-y-8">
+                          {sectionFields.map(field => (
+                            <div
+                              key={field.id}
+                              className={getPreviewFieldClassName(field, previewDevice)}
+                            >
+                              <label className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-900">
+                                {showFieldNumbers && (
+                                  <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                    {fieldNumberMap.get(field.id)}
+                                  </span>
+                                )}
+                                <span>{field.label}</span>
+                                {field.required && <span className="text-rose-500">*</span>}
+                              </label>
+
+                              {renderField(field, formData[field.id], handleAnswer)}
+
+                              {field.description && (
+                                <p className="mt-2 text-xs leading-5 text-slate-500">
+                                  {field.description}
+                                </p>
+                              )}
+
+                              {showLogicConditions && (
+                                <LogicPreview
+                                  field={field}
+                                  fields={fields}
+                                  edges={edges}
+                                />
+                              )}
+
+                              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                {getFieldTypeLabel(field.type)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         <div className="mt-auto border-t border-slate-200 px-5 py-6">

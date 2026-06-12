@@ -24,7 +24,7 @@ import {
   FaUndo
 } from "react-icons/fa";
 
-import Canvas from "./components/Canvas";
+import Canvas, { FieldDragPreview } from "./components/Canvas";
 import DeleteButton from "./components/DeleteButton";
 import PreviewFlow from "./components/PreviewFlow";
 import PropertiesPanel from "./components/PropertiesPanel";
@@ -116,6 +116,7 @@ function createElement(type, position, sectionId = null) {
     position,
     required: false,
     readOnly: false,
+    fieldWidth: isSection ? "full" : "full",
     sectionId: isSection ? null : sectionId
   };
 }
@@ -511,6 +512,7 @@ export default function App() {
   const [activePageId, setActivePageId] = useState(initialPage.id);
   const [selectedItem, setSelectedItem] = useState(null);
   const [viewMode, setViewMode] = useState("design");
+  const [activeCanvasItem, setActiveCanvasItem] = useState(null);
   const [activeSidebarItem, setActiveSidebarItem] = useState(null);
   const [formTitle, setFormTitle] = useState("Oral Cancer Screening Form (v2a)");
   const [leftPanelWidth, setLeftPanelWidth] = useState(290);
@@ -655,18 +657,33 @@ export default function App() {
     const draggedItem = event.active.data.current?.item;
 
     if (draggedItem) {
+      setActiveCanvasItem(null);
       setActiveSidebarItem(draggedItem);
+      return;
+    }
+
+    if (event.active.data.current?.source === "canvas") {
+      const draggedElement = activePage.elements.find(
+        element => element.id === event.active.id
+      );
+
+      setActiveCanvasItem(draggedElement || null);
+      setActiveSidebarItem(null);
     }
   }
 
   function handleDragEnd(event) {
     const { active, over } = event;
-    const draggedType = String(active.id);
+    const draggedType =
+      active.data.current?.type ||
+      active.data.current?.item?.id ||
+      String(active.id);
     const draggedFromSidebar =
       active.data.current?.source === "sidebar" &&
       COMPONENT_TYPES.includes(draggedType);
 
     setActiveSidebarItem(null);
+    setActiveCanvasItem(null);
 
     if (!over) {
       return;
@@ -683,7 +700,11 @@ export default function App() {
         return;
       }
 
-      addElement(draggedType, undefined, target.sectionId);
+      const nextElement = createElement(draggedType, undefined, target.sectionId);
+
+      setPageElements(prevElements =>
+        placeElementInGroup(prevElements, nextElement, target)
+      );
       return;
     }
 
@@ -724,6 +745,7 @@ export default function App() {
 
   function handleDragCancel() {
     setActiveSidebarItem(null);
+    setActiveCanvasItem(null);
   }
 
   function switchPage(pageId) {
@@ -1197,8 +1219,17 @@ export default function App() {
         </div>
       </div>
 
-      <DragOverlay>
-        <ComponentDragPreview item={activeSidebarItem} />
+      <DragOverlay
+        dropAnimation={{
+          duration: 180,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)"
+        }}
+      >
+        {activeSidebarItem ? (
+          <ComponentDragPreview item={activeSidebarItem} />
+        ) : (
+          <FieldDragPreview element={activeCanvasItem} />
+        )}
       </DragOverlay>
     </DndContext>
   );

@@ -1,22 +1,25 @@
 import { useDroppable } from "@dnd-kit/core";
 import {
+  rectSortingStrategy,
   SortableContext,
-  useSortable,
-  verticalListSortingStrategy
+  useSortable
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 import {
   FaAlignLeft,
+  FaCalendarAlt,
   FaCheck,
   FaCheckCircle,
   FaChevronDown,
   FaEdit,
   FaFont,
-  FaGripLines,
+  FaGripVertical,
   FaLayerGroup,
   FaList,
-  FaPlus
+  FaPhoneAlt,
+  FaPlus,
+  FaToggleOn
 } from "react-icons/fa";
 
 import DeleteButton from "./DeleteButton";
@@ -46,16 +49,88 @@ const fieldOptions = [
     label: "Radio group",
     hint: "Visible choices",
     icon: <FaCheckCircle />
+  },
+  {
+    id: "yesno",
+    label: "Yes / No toggle",
+    hint: "Binary answer",
+    icon: <FaToggleOn />
+  },
+  {
+    id: "date",
+    label: "Date field",
+    hint: "Calendar date",
+    icon: <FaCalendarAlt />
+  },
+  {
+    id: "phone",
+    label: "Phone number",
+    hint: "Contact number",
+    icon: <FaPhoneAlt />
   }
 ];
 
+const fieldWidthClasses = {
+  full: "form-field-card--full",
+  half: "form-field-card--half",
+  quarter: "form-field-card--quarter"
+};
+
+function getFieldWidthClassName(fieldWidth) {
+  return fieldWidthClasses[fieldWidth] || fieldWidthClasses.full;
+}
+
+export function FieldDragPreview({ element }) {
+  if (!element) {
+    return null;
+  }
+
+  return (
+    <article className="w-[min(26rem,82vw)] rounded-[1.2rem] border border-emerald-300 bg-white p-5 shadow-2xl pointer-events-none">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold text-slate-900">
+            {element.label}
+          </div>
+          <div className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">
+            {element.type}
+          </div>
+        </div>
+
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600">
+          <FaGripVertical />
+        </span>
+      </div>
+
+      <FormElements element={element} />
+    </article>
+  );
+}
+
 function FieldCard({ element, selectedId, onSelect, deleteElement }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: element.id });
+  const {
+    attributes,
+    isDragging,
+    listeners,
+    setActivatorNodeRef,
+    setNodeRef,
+    transform,
+    transition
+  } =
+    useSortable({
+      id: element.id,
+      data: {
+        source: "canvas",
+        type: element.type
+      }
+    });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
+    transform: CSS.Translate.toString(transform),
+    transition:
+      transition ||
+      "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, opacity 180ms ease",
+    willChange: transform ? "transform" : undefined
   };
 
   return (
@@ -70,7 +145,9 @@ function FieldCard({ element, selectedId, onSelect, deleteElement }) {
         selectedId === element.id
           ? "border-emerald-400 shadow-[0_14px_30px_rgba(39,134,97,0.15)]"
           : "border-slate-200"
-      }`}
+      } ${
+        isDragging ? "opacity-30 shadow-none" : ""
+      } form-field-card ${getFieldWidthClassName(element.fieldWidth)}`}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
@@ -85,12 +162,15 @@ function FieldCard({ element, selectedId, onSelect, deleteElement }) {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            ref={setActivatorNodeRef}
             {...attributes}
             {...listeners}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition hover:border-emerald-200 hover:text-emerald-600"
+            onClick={event => event.stopPropagation()}
+            className="flex h-9 w-9 touch-none cursor-grab items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 active:cursor-grabbing"
             title="Drag field"
+            aria-label={`Drag ${element.label}`}
           >
-            <FaGripLines />
+            <FaGripVertical />
           </button>
 
           <DeleteButton
@@ -121,15 +201,32 @@ function SectionCard({
   const [showOptions, setShowOptions] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [sectionName, setSectionName] = useState(section.label || "");
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: section.id });
+  const {
+    attributes,
+    isDragging,
+    listeners,
+    setActivatorNodeRef,
+    setNodeRef,
+    transform,
+    transition
+  } =
+    useSortable({
+      id: section.id,
+      data: {
+        source: "canvas",
+        type: section.type
+      }
+    });
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `section-drop-${section.id}`
   });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
+    transform: CSS.Translate.toString(transform),
+    transition:
+      transition ||
+      "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, opacity 180ms ease",
+    willChange: transform ? "transform" : undefined
   };
 
   function saveSectionName() {
@@ -145,11 +242,11 @@ function SectionCard({
       ref={setNodeRef}
       style={style}
       onClick={() => onSelect(section.id)}
-      className={`rounded-[1.4rem] border bg-white shadow-sm transition ${
+      className={`w-full rounded-[1.4rem] border bg-white shadow-sm transition ${
         selectedId === section.id
           ? "border-emerald-400 shadow-[0_18px_36px_rgba(39,134,97,0.14)]"
           : "border-emerald-100"
-      }`}
+      } ${isDragging ? "opacity-30 shadow-none" : ""}`}
     >
       <header className="flex items-start justify-between gap-4 border-b border-emerald-100 bg-emerald-50/75 px-5 py-4">
         <div className="flex items-start gap-3">
@@ -220,12 +317,15 @@ function SectionCard({
         <div className="flex items-center gap-2">
           <button
             type="button"
+            ref={setActivatorNodeRef}
             {...attributes}
             {...listeners}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-100 bg-white text-slate-400 transition hover:border-emerald-200 hover:text-emerald-600"
+            onClick={event => event.stopPropagation()}
+            className="flex h-9 w-9 touch-none cursor-grab items-center justify-center rounded-xl border border-emerald-100 bg-white text-slate-400 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 active:cursor-grabbing"
             title="Drag section"
+            aria-label={`Drag ${section.label}`}
           >
-            <FaGripLines />
+            <FaGripVertical />
           </button>
 
           <DeleteButton
@@ -326,9 +426,9 @@ function SectionCard({
 
           <SortableContext
             items={fields.map(field => field.id)}
-            strategy={verticalListSortingStrategy}
+            strategy={rectSortingStrategy}
           >
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3">
               {fields.map(field => (
                 <FieldCard
                   key={field.id}
@@ -399,9 +499,9 @@ export default function Canvas({
 
         <SortableContext
           items={topLevelElements.map(element => element.id)}
-          strategy={verticalListSortingStrategy}
+          strategy={rectSortingStrategy}
         >
-          <div className="space-y-4">
+          <div className="flex flex-wrap gap-4">
             {topLevelElements.map(element =>
               element.type === "section" ? (
                 <SectionCard
